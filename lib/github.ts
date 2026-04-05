@@ -10,6 +10,11 @@ export interface StreakStats {
   currentStreak: number;
   longestStreak: number;
   joinedYear?: number;
+  totalContributionsStart?: string;
+  currentStreakStart?: string;
+  currentStreakEnd?: string;
+  longestStreakStart?: string;
+  longestStreakEnd?: string;
 }
 
 // Fetch all contribution years for a user
@@ -122,7 +127,11 @@ export async function fetchGitHubStreak(username: string): Promise<StreakStats |
     let totalContributions = 0;
     let currentStreak = 0;
     let longestStreak = 0;
+    let longestStreakStart = "";
+    let longestStreakEnd = "";
+
     let tempStreak = 0;
+    let tempStreakStart = "";
 
     const todayStr = new Date().toISOString().split("T")[0];
     const yesterdayDate = new Date();
@@ -138,9 +147,14 @@ export async function fetchGitHubStreak(username: string): Promise<StreakStats |
       totalContributions += day.contributionCount;
 
       if (day.contributionCount > 0) {
+        if (tempStreak === 0) {
+           tempStreakStart = day.date;
+        }
         tempStreak++;
         if (tempStreak > longestStreak) {
           longestStreak = tempStreak;
+          longestStreakStart = tempStreakStart;
+          longestStreakEnd = day.date;
         }
       } else {
         tempStreak = 0;
@@ -149,6 +163,9 @@ export async function fetchGitHubStreak(username: string): Promise<StreakStats |
 
     // Determine current streak by walking backward from today/yesterday
     let curStreak = 0;
+    let curStreakStart = "";
+    let curStreakEnd = "";
+    
     for (let i = allDays.length - 1; i >= 0; i--) {
       const day = allDays[i];
       if (day.date > todayStr) continue; // Future dates shouldn't happen, but ignore if they do
@@ -159,7 +176,11 @@ export async function fetchGitHubStreak(username: string): Promise<StreakStats |
       }
 
       if (day.contributionCount > 0) {
+        if (curStreak === 0) {
+          curStreakEnd = day.date;
+        }
         curStreak++;
+        curStreakStart = day.date;
       } else {
         // If yesterday was 0 and today was 0 (checked above), streak is broken.
         // Wait, if we are here, it means we hit a 0. 
@@ -173,13 +194,19 @@ export async function fetchGitHubStreak(username: string): Promise<StreakStats |
     }
     
     currentStreak = curStreak;
+    const firstActiveDay = allDays.find(d => d.contributionCount > 0)?.date;
 
     return {
       username,
       totalContributions,
       currentStreak,
       longestStreak,
-      joinedYear: years[years.length - 1]
+      joinedYear: years[years.length - 1],
+      totalContributionsStart: firstActiveDay,
+      currentStreakStart: curStreak > 0 ? curStreakStart : undefined,
+      currentStreakEnd: curStreak > 0 ? curStreakEnd : undefined,
+      longestStreakStart: longestStreak > 0 ? longestStreakStart : undefined,
+      longestStreakEnd: longestStreak > 0 ? longestStreakEnd : undefined,
     };
   } catch (err) {
     console.error("Error fetching GitHub streak:", err);

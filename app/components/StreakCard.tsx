@@ -1,6 +1,10 @@
 import { StreakStats } from "@/lib/github";
 import { Flame, Trophy, Activity, Calendar } from "lucide-react";
 
+const formatDate = (dateStr: string) => {
+  return new Date(dateStr).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+};
+
 export function StreakCard({ stats }: { stats: StreakStats }) {
   return (
     <div className="w-full max-w-2xl mx-auto rounded-3xl p-[1px] bg-gradient-to-br from-zinc-300 via-zinc-200 to-zinc-400 dark:from-zinc-800 dark:via-zinc-900 dark:to-zinc-800 shadow-xl transition-all duration-500 hover:shadow-2xl">
@@ -47,9 +51,14 @@ export function StreakCard({ stats }: { stats: StreakStats }) {
               <span className="text-5xl font-black text-zinc-800 dark:text-zinc-100 tracking-tighter mb-2 group-hover:scale-110 transition-transform duration-300">
                 {stats.totalContributions}
               </span>
-              <span className="text-sm font-semibold text-zinc-500 uppercase tracking-widest">
+              <span className="text-sm font-semibold text-zinc-500 uppercase tracking-widest relative z-10 w-full text-center">
                 Total
               </span>
+              {(stats.totalContributionsStart || stats.joinedYear) && (
+                 <span className="text-[10px] sm:text-xs font-medium text-zinc-400 mt-2 text-center">
+                   {stats.totalContributionsStart ? formatDate(stats.totalContributionsStart) : stats.joinedYear} - Present
+                 </span>
+              )}
             </div>
 
             {/* Current Streak */}
@@ -61,9 +70,14 @@ export function StreakCard({ stats }: { stats: StreakStats }) {
                   {stats.currentStreak}
                 </span>
               </div>
-              <span className="text-sm font-semibold text-green-700/70 dark:text-green-400/70 uppercase tracking-widest relative z-10">
+              <span className="text-sm font-semibold text-green-700/70 dark:text-green-400/70 uppercase tracking-widest relative z-10 w-full text-center">
                 Current
               </span>
+              {stats.currentStreakStart && stats.currentStreakEnd && (
+                 <span className="text-[10px] sm:text-xs font-medium text-green-600/60 dark:text-green-500/60 mt-2 relative z-10 text-center px-1">
+                   {formatDate(stats.currentStreakStart)} - {formatDate(stats.currentStreakEnd)}
+                 </span>
+              )}
             </div>
 
             {/* Longest Streak */}
@@ -75,9 +89,14 @@ export function StreakCard({ stats }: { stats: StreakStats }) {
                   {stats.longestStreak}
                 </span>
               </div>
-              <span className="text-sm font-semibold text-yellow-700/70 dark:text-yellow-400/70 uppercase tracking-widest relative z-10">
+              <span className="text-sm font-semibold text-yellow-700/70 dark:text-yellow-400/70 uppercase tracking-widest relative z-10 w-full text-center">
                 Longest
               </span>
+              {stats.longestStreakStart && stats.longestStreakEnd && (
+                 <span className="text-[10px] sm:text-xs font-medium text-yellow-700/60 dark:text-yellow-500/60 mt-2 relative z-10 text-center px-1">
+                   {formatDate(stats.longestStreakStart)} - {formatDate(stats.longestStreakEnd)}
+                 </span>
+              )}
             </div>
 
           </div>

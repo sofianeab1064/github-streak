@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { Search, Loader2, Zap, FolderGit2 } from "lucide-react";
 import { StreakCard } from "./components/StreakCard";
 import type { StreakStats } from "@/lib/github";
@@ -10,17 +10,28 @@ export default function Home() {
   const [isLoading, setIsLoading] = useState(false);
   const [stats, setStats] = useState<StreakStats | null>(null);
   const [error, setError] = useState("");
+  const [mounted, setMounted] = useState(false);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!username.trim()) return;
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  const lastFetchedUsername = useRef("");
+
+  const fetchStreak = useCallback(async (targetUsername: string) => {
+    if (!targetUsername.trim()) return;
+
+    // Prevent duplicate fetches for same user
+    if (lastFetchedUsername.current === targetUsername.trim() && stats) {
+      return; 
+    }
 
     setIsLoading(true);
     setError("");
     setStats(null);
 
     try {
-      const res = await fetch(`/api/streak?username=${encodeURIComponent(username.trim())}`);
+      const res = await fetch(`/api/streak?username=${encodeURIComponent(targetUsername.trim())}`);
       const data = await res.json();
 
       if (!res.ok) {
@@ -28,10 +39,32 @@ export default function Home() {
       }
 
       setStats(data);
+      lastFetchedUsername.current = targetUsername.trim();
     } catch (err: any) {
       setError(err.message || "An unexpected error occurred");
     } finally {
       setIsLoading(false);
+    }
+  }, [stats]);
+
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      const target = username.trim();
+      if (target) {
+        fetchStreak(target);
+      } else {
+        setStats(null);
+        setError("");
+      }
+    }, 1000);
+
+    return () => clearTimeout(handler);
+  }, [username, fetchStreak]);
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (username.trim()) {
+      fetchStreak(username.trim());
     }
   };
 
@@ -74,7 +107,8 @@ export default function Home() {
               />
               <button
                 type="submit"
-                disabled={isLoading || !username.trim()}
+                disabled={!mounted || isLoading || username.trim() === ""}
+                suppressHydrationWarning
                 className="flex items-center justify-center bg-zinc-900 dark:bg-white text-white dark:text-black py-3 px-6 rounded-xl font-bold transition-transform active:scale-95 disabled:opacity-50 disabled:active:scale-100 hover:bg-zinc-800 dark:hover:bg-zinc-200 mr-1 gap-2"
               >
                 {isLoading ? (
