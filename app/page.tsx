@@ -1,9 +1,10 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
-import { Search, Loader2, Zap, FolderGit2 } from "lucide-react";
+import { Search, Loader2, Zap, FolderGit2, Palette } from "lucide-react";
 import { StreakCard } from "./components/StreakCard";
 import type { StreakStats } from "@/lib/github";
+import { themes } from "@/lib/themes";
 
 export default function Home() {
   const [username, setUsername] = useState("");
@@ -11,6 +12,7 @@ export default function Home() {
   const [stats, setStats] = useState<StreakStats | null>(null);
   const [error, setError] = useState("");
   const [mounted, setMounted] = useState(false);
+  const [theme, setTheme] = useState("default");
 
   useEffect(() => {
     setMounted(true);
@@ -21,9 +23,8 @@ export default function Home() {
   const fetchStreak = useCallback(async (targetUsername: string) => {
     if (!targetUsername.trim()) return;
 
-    // Prevent duplicate fetches for same user
     if (lastFetchedUsername.current === targetUsername.trim() && stats) {
-      return; 
+      return;
     }
 
     setIsLoading(true);
@@ -127,13 +128,33 @@ export default function Home() {
               {error}
             </p>
           )}
+          {/* Theme Selector */}
+          <div className="mt-6 flex flex-wrap items-center justify-center gap-2">
+            <div className="flex items-center gap-1.5 mr-1 bg-zinc-100 dark:bg-zinc-900/50 px-3 py-1.5 rounded-full border border-zinc-200 dark:border-zinc-800/50 text-zinc-500 shadow-sm">
+              <Palette size={14} />
+              <span className="text-xs font-semibold uppercase tracking-wider">Theme</span>
+            </div>
+            {Object.keys(themes).map((t) => (
+              <button
+                key={t}
+                type="button"
+                onClick={() => setTheme(t)}
+                className={`text-xs sm:text-sm font-semibold px-3.5 py-1.5 rounded-full transition-all duration-200 ${theme === t
+                    ? "bg-zinc-900 text-white dark:bg-white dark:text-black shadow-md scale-105 ring-2 ring-zinc-900/10 dark:ring-white/10"
+                    : "bg-white text-zinc-600 hover:bg-zinc-100 dark:bg-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-800 border border-zinc-200 dark:border-zinc-800 hover:scale-105"
+                  }`}
+              >
+                {t.charAt(0).toUpperCase() + t.slice(1)}
+              </button>
+            ))}
+          </div>
         </div>
 
         {/* Stats Result or Empty State */}
         <div className="w-full min-h-[400px] flex items-center justify-center">
           {stats ? (
             <div className="w-full animate-in fade-in zoom-in-95 duration-500">
-              <StreakCard stats={stats} />
+              <StreakCard stats={stats} themeName={theme} />
             </div>
           ) : (
             <div className="flex flex-col items-center justify-center opacity-50 dark:opacity-30 user-select-none">
