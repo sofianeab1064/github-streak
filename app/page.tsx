@@ -6,6 +6,8 @@ import { StreakCard } from "./components/StreakCard";
 import type { StreakStats } from "@/lib/github";
 import { themes } from "@/lib/themes";
 
+const GITHUB_USERNAME_REGEX = /^(?!-)(?!.*--)[A-Za-z0-9-]{1,39}(?<!-)$/;
+
 export default function Home() {
   const [username, setUsername] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -13,40 +15,102 @@ export default function Home() {
   const [error, setError] = useState("");
   const [mounted, setMounted] = useState(false);
   const [theme, setTheme] = useState("default");
+  const activeRequestId = useRef(0);
 
   useEffect(() => {
     setMounted(true);
+
+    const searchParams = new URLSearchParams(window.location.search);
+    const initialUsername = searchParams.get("username")?.trim() ?? "";
+    const initialTheme = searchParams.get("theme") ?? "";
+    const savedTheme = window.localStorage.getItem("streak-theme") ?? "";
+
+    if (initialUsername) {
+      setUsername(initialUsername);
+    }
+
+    if (initialTheme && themes[initialTheme]) {
+      setTheme(initialTheme);
+      return;
+    }
+
+    if (savedTheme && themes[savedTheme]) {
+      setTheme(savedTheme);
+    }
   }, []);
 
   const lastFetchedUsername = useRef("");
 
   const fetchStreak = useCallback(async (targetUsername: string) => {
-    if (!targetUsername.trim()) return;
+    const normalizedUsername = targetUsername.trim();
 
-    if (lastFetchedUsername.current === targetUsername.trim() && stats) {
+    if (!normalizedUsername) return;
+
+    if (!GITHUB_USERNAME_REGEX.test(normalizedUsername)) {
+      setError("Please enter a valid GitHub username.");
+      setStats(null);
       return;
     }
+
+    if (lastFetchedUsername.current === normalizedUsername && stats) {
+      return;
+    }
+
+    const requestId = ++activeRequestId.current;
 
     setIsLoading(true);
     setError("");
     setStats(null);
 
     try {
-      const res = await fetch(`/api/streak?username=${encodeURIComponent(targetUsername.trim())}`);
+      const res = await fetch(`/api/streak?username=${encodeURIComponent(normalizedUsername)}`);
       const data = await res.json();
 
       if (!res.ok) {
         throw new Error(data.error || "Failed to fetch streak data");
       }
 
+      if (requestId !== activeRequestId.current) {
+        return;
+      }
+
       setStats(data);
-      lastFetchedUsername.current = targetUsername.trim();
-    } catch (err: any) {
-      setError(err.message || "An unexpected error occurred");
+      lastFetchedUsername.current = normalizedUsername;
+    } catch (err: unknown) {
+      if (requestId !== activeRequestId.current) {
+        return;
+      }
+      setError(err instanceof Error ? err.message : "An unexpected error occurred");
     } finally {
-      setIsLoading(false);
+      if (requestId === activeRequestId.current) {
+        setIsLoading(false);
+      }
     }
   }, [stats]);
+
+  useEffect(() => {
+    if (!mounted) return;
+
+    const searchParams = new URLSearchParams(window.location.search);
+    const trimmedUsername = username.trim();
+
+    if (trimmedUsername) {
+      searchParams.set("username", trimmedUsername);
+    } else {
+      searchParams.delete("username");
+    }
+
+    if (theme !== "default") {
+      searchParams.set("theme", theme);
+    } else {
+      searchParams.delete("theme");
+    }
+
+    const queryString = searchParams.toString();
+    const nextUrl = queryString ? `${window.location.pathname}?${queryString}` : window.location.pathname;
+    window.history.replaceState({}, "", nextUrl);
+    window.localStorage.setItem("streak-theme", theme);
+  }, [username, theme, mounted]);
 
   useEffect(() => {
     const handler = setTimeout(() => {

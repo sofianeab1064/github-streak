@@ -46,8 +46,6 @@ export default function RootLayout({
       lang="en"
       className={`h-full antialiased`}
     >
-      <Analytics />
-      <SpeedInsights />
       <Script
         src={`https://www.googletagmanager.com/gtag/js?id=G-JC62D61K21`}
         strategy="afterInteractive"
@@ -60,7 +58,11 @@ export default function RootLayout({
           gtag('config', 'G-JC62D61K21');
         `}
       </Script>
-      <body className="min-h-full flex flex-col">{children}</body>
+      <body className="min-h-full flex flex-col">
+        {children}
+        <Analytics />
+        <SpeedInsights />
+      </body>
     </html>
   );
 }

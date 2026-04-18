@@ -3,26 +3,25 @@ import { fetchGitHubStreak } from "@/lib/github";
 import { themes } from "@/lib/themes";
 
 export const revalidate = 3600;
+const GITHUB_USERNAME_REGEX = /^(?!-)(?!.*--)[A-Za-z0-9-]{1,39}(?<!-)$/;
 
 const LUCIDE_FLAME_PATH =
   "M12 3q1 4 4 6.5t3 5.5a1 1 0 0 1-14 0 5 5 0 0 1 1-3 1 1 0 0 0 5 0c0-2-1.5-3-1.5-5q0-2 2.5-4";
 
+const RING_CX = 247.5;
+const RING_CY = 79;
 
-const RING_CX  = 247.5;
-const RING_CY  = 79;    
-                       
-const RING_R   = 40;
-const GAP_DEG  = 60;    
+const RING_R = 40;
+const GAP_DEG = 60;
 
 const FLAME_CX = RING_CX;
-const FLAME_CY = RING_CY - RING_R - 2; 
-
+const FLAME_CY = RING_CY - RING_R - 2;
 
 function ringArc(cx: number, cy: number, r: number, gapDeg: number): string {
-  const half  = gapDeg / 2;
+  const half = gapDeg / 2;
   const toRad = (d: number) => (d * Math.PI) / 180;
   const startDeg = -90 + half;
-  const endDeg   = -90 - half; 
+  const endDeg = -90 - half;
   const x1 = cx + r * Math.cos(toRad(startDeg));
   const y1 = cy + r * Math.sin(toRad(startDeg));
   const x2 = cx + r * Math.cos(toRad(endDeg));
@@ -30,11 +29,15 @@ function ringArc(cx: number, cy: number, r: number, gapDeg: number): string {
   return `M ${x1.toFixed(3)},${y1.toFixed(3)} A ${r},${r} 0 1,1 ${x2.toFixed(3)},${y2.toFixed(3)}`;
 }
 
-
-function flameIcon(cx: number, cy: number, size: number, color: string): string {
+function flameIcon(
+  cx: number,
+  cy: number,
+  size: number,
+  color: string,
+): string {
   const scale = size / 24;
-  const tx    = cx - 12 * scale;
-  const ty    = cy - 12 * scale;
+  const tx = cx - 12 * scale;
+  const ty = cy - 12 * scale;
   return `<g transform="translate(${tx.toFixed(3)}, ${ty.toFixed(3)}) scale(${scale})">
       <path d="${LUCIDE_FLAME_PATH}" fill="${color}" stroke="${color}"
             stroke-width="1" stroke-linecap="round" stroke-linejoin="round"/>
@@ -43,11 +46,15 @@ function flameIcon(cx: number, cy: number, size: number, color: string): string 
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
-  const username  = searchParams.get("username");
+  const username = searchParams.get("username")?.trim();
   const themeName = searchParams.get("theme") || "default";
 
   if (!username) {
     return new NextResponse("Username is required", { status: 400 });
+  }
+
+  if (!GITHUB_USERNAME_REGEX.test(username)) {
+    return new NextResponse("Invalid GitHub username", { status: 400 });
   }
 
   try {
@@ -58,25 +65,26 @@ export async function GET(request: Request) {
     }
 
     // ── Theme ────────────────────────────────────────────────────────────────
-    const theme      = themes[themeName] || themes.default;
-    const bg         = theme.bg;
-    const border     = theme.border;
-    const textMain   = theme.title;
-    const textMuted  = theme.text;
-    const accentRing = theme.current;  // ring + flame (e.g. pink in radical)
-    const accentNum  = theme.longest;  // streak number (e.g. gold in radical)
-    const textTotal  = theme.total || textMain;
+    const theme = themes[themeName] || themes.default;
+    const bg = theme.bg;
+    const border = theme.border;
+    const textMain = theme.title;
+    const textMuted = theme.text;
+    const accentRing = theme.current; // ring + flame (e.g. pink in radical)
+    const accentNum = theme.longest; // streak number (e.g. gold in radical)
+    const textTotal = theme.total || textMain;
 
     // ── Date helpers ─────────────────────────────────────────────────────────
     const fmt = (d: string) =>
       new Date(d).toLocaleDateString("en-US", {
-        month: "short", day: "numeric", year: "numeric",
+        month: "short",
+        day: "numeric",
+        year: "numeric",
       });
 
-    const totalDateSpan =
-      stats.totalContributionsStart
-        ? `${fmt(stats.totalContributionsStart)} - Present`
-        : `${stats.joinedYear ?? ""} - Present`;
+    const totalDateSpan = stats.totalContributionsStart
+      ? `${fmt(stats.totalContributionsStart)} - Present`
+      : `${stats.joinedYear ?? ""} - Present`;
 
     const currentDateSpan =
       stats.currentStreakStart && stats.currentStreakEnd
@@ -89,7 +97,7 @@ export async function GET(request: Request) {
         : "Present";
 
     // ── Computed SVG elements ─────────────────────────────────────────────────
-    const arcD  = ringArc(RING_CX, RING_CY, RING_R, GAP_DEG);
+    const arcD = ringArc(RING_CX, RING_CY, RING_R, GAP_DEG);
     const flame = flameIcon(FLAME_CX, FLAME_CY, 22, accentRing);
 
     // ── SVG ──────────────────────────────────────────────────────────────────
@@ -135,10 +143,10 @@ export async function GET(request: Request) {
     return new NextResponse(svg, {
       headers: {
         "Content-Type": "image/svg+xml",
-        "Cache-Control": "public, max-age=3600, s-maxage=3600, stale-while-revalidate=86400",
+        "Cache-Control":
+          "public, max-age=3600, s-maxage=3600, stale-while-revalidate=86400",
       },
     });
-
   } catch (error) {
     console.error("streak-image error:", error);
     return new NextResponse("Server Error", { status: 500 });
